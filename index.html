@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Съел? Считай!</title>
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Премиальный mini app для учета калорий, веса и прогресса." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-icon">🔥</div>
+        <div>
+          <div class="eyebrow">Премиум-трекер питания</div>
+          <h1>Съел? Считай!</h1>
+        </div>
+      </div>
+      <button id="syncBtn" class="ghost-btn" title="Обновить">↻</button>
+    </header>
+
+    <main class="content">
+      <section class="hero glass">
+        <div class="hero-left">
+          <div class="hero-title-row">
+            <h2>Мой день</h2>
+            <span id="userBadge" class="badge subtle">demo mode</span>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Калории</div>
+              <div class="kpi-value"><span id="caloriesValue">0</span> / <span id="targetValue">0</span></div>
+              <div id="remainText" class="kpi-sub">Осталось 0 ккал</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Вес сегодня</div>
+              <div class="kpi-value"><span id="weightValue">0</span> кг</div>
+              <div id="weightDeltaText" class="kpi-sub">Изменение 0 кг</div>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="action action-primary" id="addFoodBtn">✍️ Ввести еду</button>
+            <button class="action action-secondary" id="openPhotoBtn">📸 Фото еды</button>
+            <button class="action action-secondary" id="updateWeightBtn">⚖️ Обновить вес</button>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="ring-card">
+            <canvas id="calorieRing"></canvas>
+            <div class="ring-center">
+              <div class="ring-percent" id="ringPercent">0%</div>
+              <div class="ring-caption">нормы</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="glass stat-box">
+          <div class="stat-top"><span>Белки</span><strong id="proteinValue">0 г</strong></div>
+          <div class="mini-bar"><span id="proteinBar"></span></div>
+        </div>
+        <div class="glass stat-box">
+          <div class="stat-top"><span>Жиры</span><strong id="fatValue">0 г</strong></div>
+          <div class="mini-bar"><span id="fatBar"></span></div>
+        </div>
+        <div class="glass stat-box">
+          <div class="stat-top"><span>Углеводы</span><strong id="carbsValue">0 г</strong></div>
+          <div class="mini-bar"><span id="carbsBar"></span></div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="glass panel">
+          <div class="panel-head"><h3>Сегодня</h3><button class="tiny-btn" id="refreshDayBtn">Обновить</button></div>
+          <div id="todayList" class="meal-list"></div>
+        </div>
+
+        <div class="glass panel">
+          <div class="panel-head"><h3>Рекомендация</h3><button class="tiny-btn" id="analysisBtn">Анализ</button></div>
+          <div id="recommendationText" class="recommendation"></div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="glass panel chart-panel">
+          <div class="panel-head"><h3>Калории за неделю</h3><span class="badge">7 дней</span></div>
+          <canvas id="weekCaloriesChart"></canvas>
+        </div>
+
+        <div class="glass panel chart-panel">
+          <div class="panel-head"><h3>Динамика веса</h3><span class="badge">7 дней</span></div>
+          <canvas id="weekWeightChart"></canvas>
+        </div>
+      </section>
+
+      <section class="glass panel">
+        <div class="panel-head"><h3>Профиль</h3><button class="tiny-btn" id="editProfileBtn">Изменить</button></div>
+        <div id="profileGrid" class="profile-grid"></div>
+      </section>
+
+      <section class="glass panel premium-panel">
+        <div class="premium-copy">
+          <div class="eyebrow gold">PRO</div>
+          <h3>Премиум-режим</h3>
+          <p>Глубокая аналитика, расширенная история, отчёты по неделе, детальные рекомендации и умные шаблоны питания.</p>
+        </div>
+        <button class="action action-primary" id="proBtn">Открыть PRO</button>
+      </section>
+    </main>
+
+    <nav class="bottom-nav glass">
+      <button class="nav-btn active" data-screen="home">🏠<span>Главная</span></button>
+      <button class="nav-btn" data-screen="day">🔥<span>День</span></button>
+      <button class="nav-btn" data-screen="week">📈<span>Неделя</span></button>
+      <button class="nav-btn" data-screen="profile">👤<span>Профиль</span></button>
+    </nav>
+  </div>
+
+  <dialog id="foodDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head"><h3>Добавить еду</h3><button class="icon-close" value="cancel">✕</button></div>
+      <label class="input-label">Что съел?</label>
+      <textarea id="foodInput" rows="4" placeholder="Например: бургер 1 шт и кола 500 мл"></textarea>
+      <div class="modal-actions">
+        <button value="cancel" class="action action-secondary">Отмена</button>
+        <button id="submitFoodBtn" value="default" class="action action-primary">Посчитать</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="weightDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head"><h3>Обновить вес</h3><button class="icon-close" value="cancel">✕</button></div>
+      <label class="input-label">Новый вес, кг</label>
+      <input id="weightInput" type="number" step="0.1" min="20" max="400" placeholder="72.4" />
+      <div class="modal-actions">
+        <button value="cancel" class="action action-secondary">Отмена</button>
+        <button id="submitWeightBtn" value="default" class="action action-primary">Сохранить</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="resultDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head"><h3>Результат</h3><button class="icon-close" value="cancel">✕</button></div>
+      <div id="resultBody" class="result-body"></div>
+      <div class="modal-actions">
+        <button value="cancel" class="action action-secondary">Закрыть</button>
+        <button id="saveMealBtn" value="default" class="action action-primary">✅ Сохранить</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
